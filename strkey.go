@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"encoding/base32"
 	"encoding/binary"
-	"golang.org/x/crypto/ed25519"
 )
 
 // PrefixByte is a lead byte representing the type.
