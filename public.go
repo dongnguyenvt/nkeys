@@ -23,7 +23,7 @@ import (
 // A KeyPair from a public key capable of verifying only.
 type pub struct {
 	pre PrefixByte
-	pub ed25519.PublicKey
+	pub PublicKey
 }
 
 // PublicKey will return the encoded public key associated with the KeyPair.
@@ -53,7 +53,7 @@ func (p *pub) Sign(input []byte) ([]byte, error) {
 
 // Verify will verify the input against a signature utilizing the public key.
 func (p *pub) Verify(input []byte, sig []byte) error {
-	if !ed25519.Verify(p.pub, input, sig) {
+	if !ed25519.Verify(ed25519.PublicKey(p.pub), input, sig) {
 		return ErrInvalidSignature
 	}
 	return nil

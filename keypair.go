@@ -26,8 +26,12 @@ type kp struct {
 	seed []byte
 }
 
-func GenerateKey(raw []byte) (ed25519.PublicKey, ed25519.PrivateKey, error) {
-	return ed25519.GenerateKey(bytes.NewReader(raw))
+type PublicKey ed25519.PublicKey
+type PrivateKey ed25519.PrivateKey
+
+func GenerateKey(raw []byte) (PublicKey, PrivateKey, error) {
+	public, private, err := ed25519.GenerateKey(bytes.NewReader(raw))
+	return PublicKey(public), PrivateKey(private), err
 }
 
 // CreatePair will create a KeyPair based on the rand entropy and a type/prefix byte. rand can be nil.
@@ -53,7 +57,7 @@ func (pair *kp) rawSeed() ([]byte, error) {
 }
 
 // keys will return a 32 byte public key and a 64 byte private key utilizing the seed.
-func (pair *kp) keys() (ed25519.PublicKey, ed25519.PrivateKey, error) {
+func (pair *kp) keys() (PublicKey, PrivateKey, error) {
 	raw, err := pair.rawSeed()
 	if err != nil {
 		return nil, nil, err
@@ -105,7 +109,7 @@ func (pair *kp) Sign(input []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ed25519.Sign(priv, input), nil
+	return ed25519.Sign(ed25519.PrivateKey(priv), input), nil
 }
 
 // Verify will verify the input against a signature utilizing the public key.
@@ -114,7 +118,7 @@ func (pair *kp) Verify(input []byte, sig []byte) error {
 	if err != nil {
 		return err
 	}
-	if !ed25519.Verify(pub, input, sig) {
+	if !ed25519.Verify(ed25519.PublicKey(pub), input, sig) {
 		return ErrInvalidSignature
 	}
 	return nil
