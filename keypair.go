@@ -26,6 +26,10 @@ type kp struct {
 	seed []byte
 }
 
+func GenerateKey(raw []byte) (ed25519.PublicKey, ed25519.PrivateKey, error) {
+	return ed25519.GenerateKey(bytes.NewReader(raw))
+}
+
 // CreatePair will create a KeyPair based on the rand entropy and a type/prefix byte. rand can be nil.
 func CreatePair(prefix PrefixByte) (KeyPair, error) {
 	var rawSeed [32]byte
@@ -54,7 +58,7 @@ func (pair *kp) keys() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	return ed25519.GenerateKey(bytes.NewReader(raw))
+	return GenerateKey(raw)
 }
 
 // Wipe will randomize the contents of the seed key
@@ -75,7 +79,7 @@ func (pair *kp) PublicKey() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pub, _, err := ed25519.GenerateKey(bytes.NewReader(raw))
+	pub, _, err := GenerateKey(raw)
 	if err != nil {
 		return "", err
 	}
