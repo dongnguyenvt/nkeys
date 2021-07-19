@@ -88,7 +88,7 @@ func EncodeSeed(public PrefixByte, src []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	if len(src) != ed25519.SeedSize {
+	if len(src) != SeedSize {
 		return nil, ErrInvalidSeedLen
 	}
 

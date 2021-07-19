@@ -28,6 +28,7 @@ type kp struct {
 
 type PublicKey ed25519.PublicKey
 type PrivateKey ed25519.PrivateKey
+const SeedSize = ed25519.SeedSize
 
 func GenerateKey(raw []byte) (PublicKey, PrivateKey, error) {
 	public, private, err := ed25519.GenerateKey(bytes.NewReader(raw))
