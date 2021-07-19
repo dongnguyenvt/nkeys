@@ -105,7 +105,7 @@ func TestSeed(t *testing.T) {
 		t.Fatalf("Did not receive ErrInvalidPrefixByte error, received %v", err)
 	}
 
-	var rawSeed [SeedSize]byte
+	var rawSeed = make([]byte, SeedSize)
 
 	_, err = io.ReadFull(rand.Reader, rawSeed[:])
 	if err != nil {

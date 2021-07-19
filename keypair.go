@@ -15,10 +15,10 @@ package nkeys
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"crypto/rand"
+	"github.com/ethereum/go-ethereum/crypto"
 	"io"
-
-	"golang.org/x/crypto/ed25519"
 )
 
 // kp is the internal struct for a kepypair using seed.
@@ -26,27 +26,47 @@ type kp struct {
 	seed []byte
 }
 
-type PublicKey ed25519.PublicKey
-type PrivateKey ed25519.PrivateKey
-const SeedSize = ed25519.SeedSize
-const SignatureSize = ed25519.SignatureSize
+var (
+	curve = crypto.S256()
+	SeedSize = curve.Params().BitSize/8+8
+)
+type PublicKey []byte
+type PrivateKey []byte
+const SignatureSize = crypto.SignatureLength
 
 func GenerateKey(raw []byte) (PublicKey, PrivateKey, error) {
-	public, private, err := ed25519.GenerateKey(bytes.NewReader(raw))
-	return PublicKey(public), PrivateKey(private), err
+	priv, err := ecdsa.GenerateKey(curve, bytes.NewReader(raw))
+	if err != nil {
+		return nil, nil, err
+	}
+	return crypto.CompressPubkey(&priv.PublicKey), crypto.FromECDSA(priv), err
 }
 
-func Sign(priv PrivateKey, input []byte) []byte {
-	return ed25519.Sign(ed25519.PrivateKey(priv), input)
+func Sign(priv PrivateKey, input []byte) ([]byte, error) {
+	edcsaPriv, err := crypto.ToECDSA(priv)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.Sign(crypto.Keccak256(input), edcsaPriv)
 }
 
 func Verify(pub PublicKey, message, sig []byte) bool {
-	return ed25519.Verify(ed25519.PublicKey(pub), message, sig)
+	pubSigned, err :=  crypto.SigToPub(crypto.Keccak256(message), sig)
+	if err != nil {
+		return false
+	}
+	public, err := crypto.DecompressPubkey(pub)
+	if err != nil {
+		return false
+	}
+	return public.Equal(pubSigned)
+	// FIXME: it's quite strange that the below API doesn't work
+	//return crypto.VerifySignature(pub, crypto.Keccak256(message), sig)
 }
 
 // CreatePair will create a KeyPair based on the rand entropy and a type/prefix byte. rand can be nil.
 func CreatePair(prefix PrefixByte) (KeyPair, error) {
-	var rawSeed [32]byte
+	var rawSeed = make([]byte, SeedSize)
 
 	_, err := io.ReadFull(rand.Reader, rawSeed[:])
 	if err != nil {
@@ -119,7 +139,7 @@ func (pair *kp) Sign(input []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Sign(priv, input), nil
+	return Sign(priv, input)
 }
 
 // Verify will verify the input against a signature utilizing the public key.
