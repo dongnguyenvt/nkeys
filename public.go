@@ -16,8 +16,6 @@ package nkeys
 import (
 	"crypto/rand"
 	"io"
-
-	"golang.org/x/crypto/ed25519"
 )
 
 // A KeyPair from a public key capable of verifying only.
@@ -53,7 +51,7 @@ func (p *pub) Sign(input []byte) ([]byte, error) {
 
 // Verify will verify the input against a signature utilizing the public key.
 func (p *pub) Verify(input []byte, sig []byte) error {
-	if !ed25519.Verify(ed25519.PublicKey(p.pub), input, sig) {
+	if !Verify(p.pub, input, sig) {
 		return ErrInvalidSignature
 	}
 	return nil
