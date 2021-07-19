@@ -34,6 +34,10 @@ func GenerateKey(raw []byte) (PublicKey, PrivateKey, error) {
 	return PublicKey(public), PrivateKey(private), err
 }
 
+func Sign(priv PrivateKey, input []byte) []byte {
+	return ed25519.Sign(ed25519.PrivateKey(priv), input)
+}
+
 // CreatePair will create a KeyPair based on the rand entropy and a type/prefix byte. rand can be nil.
 func CreatePair(prefix PrefixByte) (KeyPair, error) {
 	var rawSeed [32]byte
@@ -109,7 +113,7 @@ func (pair *kp) Sign(input []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ed25519.Sign(ed25519.PrivateKey(priv), input), nil
+	return Sign(priv, input), nil
 }
 
 // Verify will verify the input against a signature utilizing the public key.
