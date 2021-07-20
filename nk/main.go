@@ -26,8 +26,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/dongnguyenvt/nkeys"
-	"github.com/dongnguyenvt/nkeys/encode"
+	"github.com/nats-io/nkeys"
+	"github.com/nats-io/nkeys/encode"
 )
 
 // this will be set during compilation when a release is made on tools

@@ -1,4 +1,4 @@
-module github.com/dongnguyenvt/nkeys
+module github.com/nats-io/nkeys
 
 go 1.16
 

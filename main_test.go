@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/dongnguyenvt/nkeys/encode"
+	"github.com/nats-io/nkeys/encode"
 )
 
 func TestVersion(t *testing.T) {

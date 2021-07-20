@@ -17,7 +17,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/dongnguyenvt/nkeys/encode"
+	"github.com/nats-io/nkeys/encode"
 )
 
 // PrefixByte is a lead byte representing the type.
