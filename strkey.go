@@ -15,8 +15,9 @@ package nkeys
 
 import (
 	"bytes"
-	"encoding/base32"
 	"encoding/binary"
+
+	"github.com/dongnguyenvt/nkeys/encode"
 )
 
 // PrefixByte is a lead byte representing the type.
@@ -48,9 +49,6 @@ const (
 	PrefixByteUnknown PrefixByte = 23 << 3 // Base32-encodes to 'X...'
 )
 
-// Set our encoding to not include padding '=='
-var b32Enc = base32.StdEncoding.WithPadding(base32.NoPadding)
-
 // Encode will encode a raw key or seed with the prefix and crc16 and then base32 encoded.
 func Encode(prefix PrefixByte, src []byte) ([]byte, error) {
 	if err := checkValidPrefixByte(prefix); err != nil {
@@ -76,8 +74,7 @@ func Encode(prefix PrefixByte, src []byte) ([]byte, error) {
 	}
 
 	data := raw.Bytes()
-	buf := make([]byte, b32Enc.EncodedLen(len(data)))
-	b32Enc.Encode(buf, data)
+	buf := encode.Encode(data)
 	return buf[:], nil
 }
 
@@ -113,8 +110,7 @@ func EncodeSeed(public PrefixByte, src []byte) ([]byte, error) {
 	}
 
 	data := raw.Bytes()
-	buf := make([]byte, b32Enc.EncodedLen(len(data)))
-	b32Enc.Encode(buf, data)
+	buf := encode.Encode(data)
 	return buf, nil
 }
 
@@ -126,8 +122,7 @@ func IsValidEncoding(src []byte) bool {
 
 // decode will decode the base32 and check crc16 and the prefix for validity.
 func decode(src []byte) ([]byte, error) {
-	raw := make([]byte, b32Enc.DecodedLen(len(src)))
-	n, err := b32Enc.Decode(raw, src)
+	raw, n, err := encode.Decode(src)
 	if err != nil {
 		return nil, err
 	}
