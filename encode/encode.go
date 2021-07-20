@@ -1,22 +1,37 @@
 package encode
 
-import "encoding/base32"
-
-// Set our encoding to not include padding '=='
-var encoder = base32.StdEncoding.WithPadding(base32.NoPadding)
+import (
+	"encoding/hex"
+	"errors"
+)
 
 func Encode(data []byte) []byte {
-	buf := make([]byte, encoder.EncodedLen(len(data)))
-	encoder.Encode(buf, data)
+	buf := make([]byte, hex.EncodedLen(len(data)))
+	hex.Encode(buf, data)
 	return buf
 }
 
+func EncodeByte(b byte) []byte {
+	return Encode([]byte{b})
+}
+
+func DecodeByte(data []byte) (byte, error) {
+	decoded, _, err := Decode(data)
+	if err != nil {
+		return 0, err
+	}
+	if len(decoded) != 1 {
+		return 0, errors.New("invalid data")
+	}
+	return decoded[0], nil
+}
+
 func Decode(data []byte) ([]byte, int, error) {
-	raw := make([]byte, encoder.DecodedLen(len(data)))
-	n, err := encoder.Decode(raw, data)
+	raw := make([]byte, hex.DecodedLen(len(data)))
+	n, err := hex.Decode(raw, data)
 	return raw, n, err
 }
 
 func DecodeString(data string) ([]byte, error) {
-	return encoder.DecodeString(data)
+	return hex.DecodeString(data)
 }

@@ -25,31 +25,31 @@ type PrefixByte byte
 
 const (
 	// PrefixByteSeed is the version byte used for encoded NATS Seeds
-	PrefixByteSeed PrefixByte = 18 << 3 // Base32-encodes to 'S...'
+	PrefixByteSeed PrefixByte = 'S' // {53, 51}
 
 	// PrefixBytePrivate is the version byte used for encoded NATS Private keys
-	PrefixBytePrivate PrefixByte = 15 << 3 // Base32-encodes to 'P...'
+	PrefixBytePrivate PrefixByte = 'P' // {53, 48}
 
 	// PrefixByteServer is the version byte used for encoded NATS Servers
-	PrefixByteServer PrefixByte = 13 << 3 // Base32-encodes to 'N...'
+	PrefixByteServer PrefixByte = 'N' // {52, 101}
 
 	// PrefixByteCluster is the version byte used for encoded NATS Clusters
-	PrefixByteCluster PrefixByte = 2 << 3 // Base32-encodes to 'C...'
+	PrefixByteCluster PrefixByte = 'C' // {52, 51}
 
 	// PrefixByteOperator is the version byte used for encoded NATS Operators
-	PrefixByteOperator PrefixByte = 14 << 3 // Base32-encodes to 'O...'
+	PrefixByteOperator PrefixByte = 'O' // {52, 102}
 
 	// PrefixByteAccount is the version byte used for encoded NATS Accounts
-	PrefixByteAccount PrefixByte = 0 // Base32-encodes to 'A...'
+	PrefixByteAccount PrefixByte = 'A' // {52, 49}
 
 	// PrefixByteUser is the version byte used for encoded NATS Users
-	PrefixByteUser PrefixByte = 20 << 3 // Base32-encodes to 'U...'
+	PrefixByteUser PrefixByte = 'U' // {53, 53}
 
 	// PrefixByteUnknown is for unknown prefixes.
-	PrefixByteUnknown PrefixByte = 23 << 3 // Base32-encodes to 'X...'
+	PrefixByteUnknown PrefixByte = 'X' // {53, 56}
 )
 
-// Encode will encode a raw key or seed with the prefix and crc16 and then base32 encoded.
+// Encode will encode a raw key or seed with the prefix and crc16 and then hexadecimal encoded.
 func Encode(prefix PrefixByte, src []byte) ([]byte, error) {
 	if err := checkValidPrefixByte(prefix); err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func Encode(prefix PrefixByte, src []byte) ([]byte, error) {
 	return buf[:], nil
 }
 
-// EncodeSeed will encode a raw key with the prefix and then seed prefix and crc16 and then base32 encoded.
+// EncodeSeed will encode a raw key with the prefix and then seed prefix and crc16 and then hexadecimal encoded.
 func EncodeSeed(public PrefixByte, src []byte) ([]byte, error) {
 	if err := checkValidPublicPrefixByte(public); err != nil {
 		return nil, err
@@ -88,15 +88,10 @@ func EncodeSeed(public PrefixByte, src []byte) ([]byte, error) {
 		return nil, ErrInvalidSeedLen
 	}
 
-	// In order to make this human printable for both bytes, we need to do a little
-	// bit manipulation to setup for base32 encoding which takes 5 bits at a time.
-	b1 := byte(PrefixByteSeed) | (byte(public) >> 5)
-	b2 := (byte(public) & 31) << 3 // 31 = 00011111
-
 	var raw bytes.Buffer
 
-	raw.WriteByte(b1)
-	raw.WriteByte(b2)
+	raw.WriteByte(byte(PrefixByteSeed))
+	raw.WriteByte(byte(public))
 
 	// write payload
 	if _, err := raw.Write(src); err != nil {
@@ -120,7 +115,7 @@ func IsValidEncoding(src []byte) bool {
 	return err == nil
 }
 
-// decode will decode the base32 and check crc16 and the prefix for validity.
+// decode will decode the hexadecimal and check crc16 and the prefix for validity.
 func decode(src []byte) ([]byte, error) {
 	raw, n, err := encode.Decode(src)
 	if err != nil {
@@ -146,7 +141,7 @@ func decode(src []byte) ([]byte, error) {
 	return raw[:len(raw)-2], nil
 }
 
-// Decode will decode the base32 string and check crc16 and enforce the prefix is what is expected.
+// Decode will decode the hexadecimal string and check crc16 and enforce the prefix is what is expected.
 func Decode(expectedPrefix PrefixByte, src []byte) ([]byte, error) {
 	if err := checkValidPrefixByte(expectedPrefix); err != nil {
 		return nil, err
@@ -161,7 +156,7 @@ func Decode(expectedPrefix PrefixByte, src []byte) ([]byte, error) {
 	return raw[1:], nil
 }
 
-// DecodeSeed will decode the base32 string and check crc16 and enforce the prefix is a seed
+// DecodeSeed will decode the hexadecimal string and check crc16 and enforce the prefix is a seed
 // and the subsequent type is a valid type.
 func DecodeSeed(src []byte) (PrefixByte, []byte, error) {
 	raw, err := decode(src)
@@ -169,8 +164,8 @@ func DecodeSeed(src []byte) (PrefixByte, []byte, error) {
 		return PrefixByteSeed, nil, err
 	}
 	// Need to do the reverse here to get back to internal representation.
-	b1 := raw[0] & 248                          // 248 = 11111000
-	b2 := (raw[0]&7)<<5 | ((raw[1] & 248) >> 3) // 7 = 00000111
+	b1 := raw[0]
+	b2 := raw[1]
 
 	if PrefixByte(b1) != PrefixByteSeed {
 		return PrefixByteSeed, nil, ErrInvalidSeed
@@ -193,8 +188,7 @@ func Prefix(src string) PrefixByte {
 		return prefix
 	}
 	// Might be a seed.
-	b1 := b[0] & 248
-	if PrefixByte(b1) == PrefixByteSeed {
+	if prefix == PrefixByteSeed {
 		return PrefixByteSeed
 	}
 	return PrefixByteUnknown

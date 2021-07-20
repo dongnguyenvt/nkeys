@@ -21,6 +21,8 @@ import (
 	"os"
 	"regexp"
 	"testing"
+
+	"github.com/dongnguyenvt/nkeys/encode"
 )
 
 func TestVersion(t *testing.T) {
@@ -130,6 +132,17 @@ func TestSeed(t *testing.T) {
 	}
 }
 
+func getPrefix(t *testing.T, raw []byte) PrefixByte {
+	if len(raw) < 2 {
+		t.Fatal("invalid data")
+	}
+	pre, err := encode.DecodeByte(raw[:2])
+	if err != nil {
+		t.Fatalf("Received an error retrieving prefix: %v", err)
+	}
+	return PrefixByte(pre)
+}
+
 func TestAccount(t *testing.T) {
 	account, err := CreateAccount()
 	if err != nil {
@@ -152,7 +165,8 @@ func TestAccount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received an error retrieving public key: %v", err)
 	}
-	if public[0] != 'A' {
+	pre := getPrefix(t, []byte(public))
+	if pre != 'A' {
 		t.Fatalf("Expected a prefix of 'A' but got %c", public[0])
 	}
 	if !IsValidPublicAccountKey(public) {
@@ -164,7 +178,8 @@ func TestAccount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received an error retrieving private key: %v", err)
 	}
-	if private[0] != 'P' {
+	pre = getPrefix(t, private)
+	if pre != 'P' {
 		t.Fatalf("Expected a prefix of 'P' but got %v", private[0])
 	}
 
@@ -198,7 +213,8 @@ func TestUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received an error retrieving public key: %v", err)
 	}
-	if public[0] != 'U' {
+	pre := getPrefix(t, []byte(public))
+	if pre != 'U' {
 		t.Fatalf("Expected a prefix of 'U' but got %c", public[0])
 	}
 	if !IsValidPublicUserKey(public) {
@@ -220,7 +236,8 @@ func TestOperator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received an error retrieving public key: %v", err)
 	}
-	if public[0] != 'O' {
+	pre := getPrefix(t, []byte(public))
+	if pre != 'O' {
 		t.Fatalf("Expected a prefix of 'O' but got %c", public[0])
 	}
 	if !IsValidPublicOperatorKey(public) {
@@ -242,7 +259,8 @@ func TestCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received an error retrieving public key: %v", err)
 	}
-	if public[0] != 'C' {
+	pre := getPrefix(t, []byte(public))
+	if pre != 'C' {
 		t.Fatalf("Expected a prefix of 'C' but got %c", public[0])
 	}
 	if !IsValidPublicClusterKey(public) {
@@ -264,7 +282,8 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received an error retrieving public key: %v", err)
 	}
-	if public[0] != 'N' {
+	pre := getPrefix(t, []byte(public))
+	if pre != 'N' {
 		t.Fatalf("Expected a prefix of 'N' but got %c", public[0])
 	}
 	if !IsValidPublicServerKey(public) {
@@ -401,7 +420,9 @@ func TestFromSeed(t *testing.T) {
 		t.Fatalf("Unexpected error retrieving seed: %v", err)
 	}
 	// Make sure the seed starts with SA
-	if !bytes.HasPrefix(seed, []byte("SA")) {
+	p1 := getPrefix(t, seed[:2])
+	p2 := getPrefix(t, seed[2:4])
+	if !(p1 == 'S' && p2 == 'A') {
 		t.Fatalf("Expected seed to start with 'SA', go '%s'", seed[:2])
 	}
 
@@ -444,9 +465,9 @@ func TestKeyPairFailures(t *testing.T) {
 
 func TestBadDecode(t *testing.T) {
 	if _, err := decode([]byte("foo!")); err == nil {
-		t.Fatal("Expected an error decoding non-base32")
+		t.Fatal("Expected an error decoding non-hexadecimal")
 	}
-	if _, err := decode([]byte("OK")); err == nil {
+	if _, err := decode([]byte("aa")); err == nil {
 		t.Fatal("Expected an error decoding a too short string")
 	}
 

@@ -237,10 +237,10 @@ func createVanityKey(keyType, vanity, entropy string, max int) nkeys.KeyPair {
 	spinners := []rune(`⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`)
 	pre := preForType(keyType)
 	vanity = strings.ToUpper(vanity)
-	// Check to make sure we can base32 into it by trying to decode it.
+	// Check to make sure we can hexadecimal into it by trying to decode it.
 	_, err := encode.DecodeString(vanity)
 	if err != nil {
-		log.Fatalf("Can not generate base32 encoded strings to match '%s'", vanity)
+		log.Fatalf("Can not generate hexadecimal encoded strings to match '%s'", vanity)
 	}
 
 	ncpu := runtime.NumCPU()
