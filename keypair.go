@@ -17,8 +17,9 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"github.com/ethereum/go-ethereum/crypto"
 	"io"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // kp is the internal struct for a kepypair using seed.
@@ -27,11 +28,13 @@ type kp struct {
 }
 
 var (
-	curve = crypto.S256()
-	SeedSize = curve.Params().BitSize/8+8
+	curve    = crypto.S256()
+	SeedSize = curve.Params().BitSize/8 + 8
 )
+
 type PublicKey []byte
 type PrivateKey []byte
+
 const SignatureSize = crypto.SignatureLength
 
 func GenerateKey(raw []byte) (PublicKey, PrivateKey, error) {
