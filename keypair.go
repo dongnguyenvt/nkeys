@@ -54,17 +54,11 @@ func Sign(priv PrivateKey, input []byte) ([]byte, error) {
 }
 
 func Verify(pub PublicKey, message, sig []byte) bool {
-	pubSigned, err :=  crypto.SigToPub(crypto.Keccak256(message), sig)
-	if err != nil {
+	if len(sig) != SignatureSize {
 		return false
 	}
-	public, err := crypto.DecompressPubkey(pub)
-	if err != nil {
-		return false
-	}
-	return public.Equal(pubSigned)
-	// FIXME: it's quite strange that the below API doesn't work
-	//return crypto.VerifySignature(pub, crypto.Keccak256(message), sig)
+	// trim recovery id from signature
+	return crypto.VerifySignature(pub, crypto.Keccak256(message), sig[:SignatureSize-1])
 }
 
 // CreatePair will create a KeyPair based on the rand entropy and a type/prefix byte. rand can be nil.
