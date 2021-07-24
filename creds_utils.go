@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"regexp"
+
+	"github.com/nats-io/nkeys/encode"
 )
 
 var userConfigRE = regexp.MustCompile(`\s*(?:(?:[-]{3,}.*[-]{3,}\r?\n)([\w\-.=]+)(?:\r?\n[-]{3,}.*[-]{3,}\r?\n))`)
@@ -33,9 +35,13 @@ func ParseDecoratedNKey(contents []byte) (KeyPair, error) {
 	} else {
 		lines := bytes.Split(contents, []byte("\n"))
 		for _, line := range lines {
-			if bytes.HasPrefix(bytes.TrimSpace(line), []byte("SO")) ||
-				bytes.HasPrefix(bytes.TrimSpace(line), []byte("SA")) ||
-				bytes.HasPrefix(bytes.TrimSpace(line), []byte("SU")) {
+			pre, err := getPrefix2(bytes.TrimSpace(line))
+			if err != nil {
+				continue
+			}
+			if bytes.HasPrefix(pre, []byte("SO")) ||
+				bytes.HasPrefix(pre, []byte("SA")) ||
+				bytes.HasPrefix(pre, []byte("SU")) {
 				seed = line
 				break
 			}
@@ -44,9 +50,13 @@ func ParseDecoratedNKey(contents []byte) (KeyPair, error) {
 	if seed == nil {
 		return nil, errors.New("no nkey seed found")
 	}
-	if !bytes.HasPrefix(seed, []byte("SO")) &&
-		!bytes.HasPrefix(seed, []byte("SA")) &&
-		!bytes.HasPrefix(seed, []byte("SU")) {
+	pre, err := getPrefix2(seed)
+	if err != nil {
+		return nil, errors.New("no nkey seed found")
+	}
+	if !bytes.HasPrefix(pre, []byte("SO")) &&
+		!bytes.HasPrefix(pre, []byte("SA")) &&
+		!bytes.HasPrefix(pre, []byte("SU")) {
 		return nil, errors.New("doesn't contain a seed nkey")
 	}
 	kp, err := FromSeed(seed)
@@ -54,6 +64,15 @@ func ParseDecoratedNKey(contents []byte) (KeyPair, error) {
 		return nil, err
 	}
 	return kp, nil
+}
+
+// getPrefix2 decodes 2 prefix bytes from seed
+func getPrefix2(raw []byte) ([]byte, error) {
+	if len(raw) < 4 {
+		return nil, errors.New("invalid data")
+	}
+	p, _, err := encode.Decode(raw[:4])
+	return p, err
 }
 
 // ParseDecoratedUserNKey takes a creds file, finds the NKey portion and creates a
@@ -67,7 +86,7 @@ func ParseDecoratedUserNKey(contents []byte) (KeyPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !bytes.HasPrefix(seed, []byte("SU")) {
+	if pre, err := getPrefix2(seed); err != nil || !bytes.HasPrefix(pre, []byte("SU")) {
 		return nil, errors.New("doesn't contain an user seed nkey")
 	}
 	kp, err := FromSeed(seed)
