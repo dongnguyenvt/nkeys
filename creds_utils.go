@@ -35,7 +35,8 @@ func ParseDecoratedNKey(contents []byte) (KeyPair, error) {
 	} else {
 		lines := bytes.Split(contents, []byte("\n"))
 		for _, line := range lines {
-			pre, err := getPrefix2(bytes.TrimSpace(line))
+			line = bytes.TrimSpace(line)
+			pre, err := getPrefix2(line)
 			if err != nil {
 				continue
 			}
